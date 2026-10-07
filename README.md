@@ -59,9 +59,12 @@
 
 ### `search_listings`
 
-- **What it does:** searches the listings for items that match the input description (optional: size and pize ceiling)
-- **Inputs:** `description` (str), `size` (str), and  `max_price` (float) <!-- name and type each: `max_price` (float), not "a price" -->
-- **Returns:** a list of matching listing dicts (ranked best match first). Each dict has the following fields: id, title, description, category, style_tags (list), size, condition, price (float), colors (list), brand (str or None), platform
+- **What it does:** searches the listings for items that match the input description 
+(optional: size and pize ceiling)
+- **Inputs:** `description` (str), `size` (str), and  `max_price` (float)
+- **Returns:** a list of matching listing dicts (ranked best match first). Each dict has the 
+following fields: id, title, description, category, style_tags (list), size, condition, price 
+(float), colors (list), brand (str or None), platform
 - **When it has nothing:** returns an empty list when there's no match
 
 ### `suggest_outfit`
@@ -69,7 +72,8 @@
 - **What it does:** given an item and a wardrobe, the function suggests one or two outfits
 - **Inputs:** `new_item` (dict) and `wardrobes` (dict)
 - **Returns:** a non-empty string with outfit suggestions
-- **When it has nothing:** if the wardrobe is empty, the function simply provides general styling advice
+- **When it has nothing:** if the wardrobe is empty, the function simply provides general 
+styling advice
 
 ### `create_fit_card`
 
@@ -93,13 +97,22 @@
      The grader checks your code against what you claim here, so the file and
      function have to be real. -->
 
-**Branch rule:**
+**Branch rule:** If `search_listings` returns an empty list, put a message in
+`session["error"]` that suggests what changes the user could make (e.g., raise/drop the
+price, change the size, use broader keywords in description), return the session,
+and stop without calling `suggest_outfit`. Otherwise, take the first result (i.e., best
+match) as `session["selected_item"]` and go to `suggest_outfit`, then `create_fit_card`.
 
 **Where it lives:** `agent.py::run_agent`
 
-**How the query is parsed:** <!-- regex, string splitting, or asking the model — say which -->
+**How the query is parsed:** Regex. A dollar amount after "under" (e.g.
+`under $30`) is `max_price` (float). The word after "size" (e.g. `size M`) is `size`. 
+Both are removed from the query and whatever that remains is the `description`. If 
+either of the patterns are missing, that particular input is `None` and the filter is skipped.
 
-**What moves through the session:** <!-- which fields, in what order -->
+**What moves through the session:** (1) `parsed` (description, size, max_price) -> (2) `search_results` (from `search_listings`) -> (3) `selected_item` (first result) -> (4) `outfit_suggestion` (from `suggest_outfit`) -> (5)`fit_card` (from `create_fit_card`). 
+If search empty, only `parsed`, `search_results` (empty), and `error` are set -> 
+`selected_item`, `outfit_suggestion`, and `fit_card` stay `None`.
 
 ---
 
