@@ -28,6 +28,8 @@ tool calls and returns a fit card — in at least 4 of 5 tries.
 <!-- Why 4 of 5 and not 5 of 5? Something about your search, probably —
      "my search is a plain keyword match and some phrasings will miss" is a
      real answer. -->
+My searching algorithm is a simple keyword match and some phrases are possible 
+to miss if not exact, but most should be caught. 
 
 ---
 
@@ -40,6 +42,9 @@ Given a query that matches no listings, the agent stops before calling
 <!-- Why is 5 of 5 reasonable here when criterion 1 isn't? What's different
      about this path? -->
 
+`suggest_outfit` requires an item listing as the input. Because of this, if 
+the query matches no listings, the agent will not be able to continue and 
+should branch off always. 
 ---
 
 ## 3. Something about state
@@ -54,11 +59,14 @@ Given a query that matches no listings, the agent stops before calling
      compares session["selected_item"] against what actually reached
      suggest_outfit is the shape you're after. -->
 
-
+For 5 different queries that each match at least one listing, the listing id
+in session["selected_item"] is the same as the id of the item that
+suggest_outfit receives, in 5 of 5 runs. This is checked by printing both ids at the
+end of each run.
 
 **Why this target:**
-
-
+Since `suggest_outfit` takes in the selected item, we expect the id for the 
+listings to match. If not, there is something wrong.
 
 ---
 
@@ -75,11 +83,18 @@ Given a query that matches no listings, the agent stops before calling
      sentence? A card longer than a caption anyone would post? Any of those can
      be turned into a number. -->
 
+For 5 different queries that each match at least one listing, the fit card
+contains all three of the following, in at least 4 of 5 runs:
+- the item's price (e.g. "18", "18.0"), with or without "$"
+- the item's platform, ignoring case
+- at least one word from the item's title or style_tags, ignoring case
 
+Checked by a script that searches each card's text for all three.
 
 **Why this target:**
-
-
+Since these are three conditions that must be met, it is possible for some to 
+not be met and therefore failing the condition. However, in a meaningful caption,
+we want all to be present. If not, this should fail and be fine tuned.
 
 ---
 
@@ -92,11 +107,13 @@ Given a query that matches no listings, the agent stops before calling
      search respects a price ceiling — anything, as long as it names a number
      or an observable outcome. -->
 
-
+For 5 different queries that each match at least one listing and each state
+a price ceiling as "under $N", "less than $N", "below $N", or "max $N", every
+listing in session["search_results"] has a price at or below N, in 5 of 5 runs.
 
 **Why this target:**
-
-
+The price ceiling in an intentional setting that the user sets. The model should
+respect this every time. 
 
 ---
 

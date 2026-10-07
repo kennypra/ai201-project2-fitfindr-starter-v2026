@@ -60,7 +60,7 @@
 ### `search_listings`
 
 - **What it does:** searches the listings for items that match the input description 
-(optional: size and pize ceiling)
+(optional: size and price ceiling)
 - **Inputs:** `description` (str), `size` (str), and  `max_price` (float)
 - **Returns:** a list of matching listing dicts (ranked best match first). Each dict has the 
 following fields: id, title, description, category, style_tags (list), size, condition, price 
@@ -70,7 +70,7 @@ following fields: id, title, description, category, style_tags (list), size, con
 ### `suggest_outfit`
 
 - **What it does:** given an item and a wardrobe, the function suggests one or two outfits
-- **Inputs:** `new_item` (dict) and `wardrobes` (dict)
+- **Inputs:** `new_item` (dict) and `wardrobe` (dict)
 - **Returns:** a non-empty string with outfit suggestions
 - **When it has nothing:** if the wardrobe is empty, the function simply provides general 
 styling advice
