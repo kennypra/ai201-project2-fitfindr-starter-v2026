@@ -105,10 +105,78 @@ def run_agent(query: str, wardrobe: dict) -> dict:
       • A handler for ModelUnavailable, so a bad key produces a message rather
         than a stack trace. The import is already at the top of this file.
     """
-    session = new_session(query, wardrobe)
+    import re
 
-    # TODO: delete these two lines and build the loop.
-    session["error"] = "The planning loop isn't built yet — see the TODO in agent.py."
+    session = new_session(query, wardrobe)
+    steps = 0
+
+    # ── parse (regex) ─────────────────────────────────────────────────────────
+    steps += 1
+    trace.check_iterations(steps)
+    text = query
+
+    # Price ceiling: "under $30", "less than $30", "below $30", "max $30".
+    max_price = None
+    price_match = re.search(r"(?:under|less than|below|max)\s*\$(\d+(?:\.\d+)?)",
+                            text, re.IGNORECASE)
+    if price_match:
+        max_price = float(price_match.group(1))
+        text = text.replace(price_match.group(0), " ")
+
+    # Size: the word after "size", with punctuation stripped ("M," -> "M").
+    size = None
+    size_match = re.search(r"\bsize\s+(\S+)", text, re.IGNORECASE)
+    if size_match:
+        size = size_match.group(1).strip(",.;:!?")
+        text = text.replace(size_match.group(0), " ")
+
+    description = " ".join(text.replace(",", " ").split())
+    session["parsed"] = {"description": description, "size": size,
+                         "max_price": max_price}
+
+    # ── search ────────────────────────────────────────────────────────────────
+    steps += 1
+    trace.check_iterations(steps)
+    parsed = session["parsed"]
+    session["search_results"] = search_listings(
+        parsed["description"], parsed["size"], parsed["max_price"]
+    )
+
+    # ── THE BRANCH: nothing found → say what to change and stop ──────────────
+    if not session["search_results"]:
+        tips = []
+        if parsed["max_price"] is not None:
+            tips.append(f"raise the price ceiling above ${parsed['max_price']:g} "
+                        "or drop it")
+        if parsed["size"] is not None:
+            tips.append(f"drop \"size {parsed['size']}\" (sizes must match "
+                        "exactly, so M won't match S/M)")
+        tips.append("use broader keywords, like a type of item (tee, jeans, "
+                    "jacket) or a style (vintage, y2k, streetwear)")
+        session["error"] = (
+            f"No listings matched \"{parsed['description']}\""
+            + (f" in size {parsed['size']}" if parsed["size"] else "")
+            + (f" at or under ${parsed['max_price']:g}"
+               if parsed["max_price"] is not None else "")
+            + ". Try: " + "; ".join(tips) + "."
+        )
+        return session
+
+    # ── otherwise: pick the best match and keep going ─────────────────────────
+    session["selected_item"] = session["search_results"][0]
+
+    steps += 1
+    trace.check_iterations(steps)
+    session["outfit_suggestion"] = suggest_outfit(
+        session["selected_item"], session["wardrobe"]
+    )
+
+    steps += 1
+    trace.check_iterations(steps)
+    session["fit_card"] = create_fit_card(
+        session["outfit_suggestion"], session["selected_item"]
+    )
+
     return session
 
 

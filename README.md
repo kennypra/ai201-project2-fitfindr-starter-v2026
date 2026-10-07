@@ -41,7 +41,7 @@
 
 <!-- Three or four sentences: what a user asks for, and what they get back. -->
 
-
+FitFindr is a clothes thrifting agent that we built in Unit 3 and will test in unit 4: the user types what they want in plain NL (e.g., `vintage graphic tee under $30, size M`) and the agent pulls generates a description, size, and price ceiling and searches  through listings from different platforms. If something matches, it takes the best match, suggests outfits that pair it from pieces from a wardrobe (or general styling advice if  wardrobe is empty), and writes a short caption they could post. If nothing matches, it stops and tells the user what to change.
 
 ---
 
@@ -126,7 +126,15 @@ If search empty, only `parsed`, `search_results` (empty), and `error` are set ->
 **One full query**
 
 ```
-$ python app.py ask '...'
+$ python app.py ask 'vintage graphic tee under $30'
+
+Found:    Y2K Baby Tee — Butterfly Print — $18.0 on depop
+
+Outfit:   Pair the Y2K Baby Tee — Butterfly Print with your baggy straight-leg jeans and chunky white sneakers for an effortless early-2000s streetwear look. Layer the vintage black denim jacket over top and sling the black crossbody bag across your chest to tie the casual, nostalgic vibe together.
+
+For a sweet mix of edgy and soft, style the Y2K Baby Tee — Butterfly Print with your wide-leg khaki trousers, defined at the waist by the brown leather belt. Slip into your black combat boots and toss the black cropped zip hoodie over your shoulders or wear it unzipped to add a cool, contrasting finish to the pastel butterfly graphics.
+
+Fit card: Scored this cute little butterfly tee on Depop for just 18 bucks. It has the ultimate 2000s mallrat energy without looking like a costume. Can't wait to throw it on with somebaggy denim and chunky sneakers for running errands.
 
 ```
 
@@ -135,15 +143,23 @@ $ python app.py ask '...'
 ```
 $ python -c "from tools import search_listings; print(search_listings('graphic tee', max_price=30))"
 
-```
-
-```
-$ python -c "from tools import suggest_outfit; ..."
+[{'id': 'lst_002', 'title': 'Y2K Baby Tee — Butterfly Print', 'description': 'Super cute early 2000s baby tee with butterfly graphic. Fitted crop length. Tag says medium but fits like a small.', 'category': 'tops', 'style_tags': ['y2k', 'vintage', 'graphic tee', 'cottagecore'], 'size': 'S/M', 'condition': 'excellent', 'price': 18.0, 'colors': ['white', 'pink', 'purple'],'brand': None, 'platform': 'depop'}, {'id': 'lst_006', 'title': 'Graphic Tee — 2003 Tour Bootleg Style', 'description': 'Vintage-style bootleg tee with faded graphic. Slightly boxy fit. 100% cotton, soft and worn-in.', 'category': 'tops', 'style_tags': ['graphic tee', 'vintage', 'grunge', 'streetwear', 'band tee'], 'size': 'L', 'condition': 'good', 'price': 24.0, 'colors': ['black'], 'brand': None, 'platform': 'depop'}, {'id': 'lst_017', 'title': 'Mesh Long-Sleeve Top — Black', 'description': 'Sheer black mesh long-sleeve. Great for layering under a graphic tee or over a bralette. Stretchy material, fits true to size.', 'category': 'tops', 'style_tags': ['y2k', 'grunge', 'goth', 'layering'], 'size': 'S/M', 'condition': 'excellent', 'price': 15.0, 'colors': ['black'], 'brand': None, 'platform': 'depop'}, {'id': 'lst_033', 'title': 'Vintage Band Tee — Faded Grey', 'description': 'Faded grey band-style tee with distressed graphic. Crew neck. Fits boxy. Well-loved but no holes or major damage.', 'category': 'tops', 'style_tags': ['vintage', 'grunge', 'band tee', 'graphic tee', 'streetwear'], 'size': 'L', 'condition': 'fair', 'price': 19.0, 'colors': ['grey', 'charcoal'], 'brand': None, 'platform': 'depop'}, {'id': 'lst_011', 'title': 'Low-Rise Cargo Pants — Khaki', 'description': 'Y2K era low-rise cargo pants. Lots of pockets. Khaki color, slightly distressed at the hems. Great for layering with a long tee.', 'category': 'bottoms', 'style_tags': ['y2k', 'cargo', '2000s', 'streetwear'], 'size': 'W29', 'condition': 'fair', 'price': 27.0, 'colors': ['khaki', 'tan'], 'brand': None, 'platform': 'poshmark'}, {'id': 'lst_015', 'title': 'Vintage Graphic Hoodie — Faded Black', 'description': 'Faded black pullover hoodie with barely-visible vintage graphic on the chest. Cozy interior. Some pilling but adds to the worn-in look.', 'category': 'tops', 'style_tags': ['vintage', 'grunge', 'graphic', 'streetwear'], 'size': 'L', 'condition': 'fair', 'price': 26.0, 'colors': ['black', 'charcoal'], 'brand': None, 'platform': 'depop'}]
 
 ```
 
 ```
-$ python -c "from tools import create_fit_card; ..."
+$ python -c "from tools import suggest_outfit; from utils.data_loader import get_example_wardrobe, load_listings; print(suggest_outfit(load_listings()[0], get_example_wardrobe()))"
+
+Pair your new Vintage Levi's 501 Jeans with the white ribbed tank top tucked in, accented by the brown leather belt. Throw on the black cropped zip hoodie and finish the look with chunkywhite sneakers and the black crossbody bag for an effortless, casual streetwear vibe.
+
+For a cool, textured denim-on-denim look, wear the Vintage Levi's 501 Jeans with the oversized grey crewneck sweatshirt layered underneath the vintage black denim jacket. Ground the outfit with the black combat boots and keep your essentials in the black crossbody bag.
+
+```
+
+```
+$ python -c "from tools import create_fit_card; from utils.data_loader import load_listings; print(create_fit_card('jeans and white sneakers', load_listings()[0]))"
+
+Scored these vintage Levi 501s on Depop for thirty eight bucks and they fit like an absolute dream. The medium wash gives off such an effortless nineties dad vibe. Just threw them on with my beat-up white sneakers and honestly I'm never taking them off.
 
 ```
 
@@ -160,15 +176,15 @@ $ python -c "from tools import create_fit_card; ..."
 
 **Moment 1**
 
-- *What I asked for:*
-- *What came back:*
-- *What I changed:*
+- *What I asked for:* I asked Claude to review my five criteria and reasons and tell me how it would test each one using only the sentence.
+- *What came back:* For criterion #4, it pointed out that I was checking for "a word naming the item's category", but categories are values like `tops` and `bottoms`, and a caption about a tee will say "tee", not "tops". So the check would fail on good captions. It also asked what counts as the price (`$18` vs `18.0`) and whether "Depop" counts for `depop`.
+- *What I changed:* I replaced category with "a word from the item's title or style_tags", and decided the price counts as a whole number with or without `$`, and the platform match ignores case.
 
 **Moment 2**
 
-- *What I asked for:*
-- *What came back:*
-- *What I changed:*
+- *What I asked for:* I asked Claude to build `search_listings` with the size rule I picked: exact match, ignoring case.
+- *What came back:* The tool, plus a test showing that `'graphic tee'` in size `M` under $30 returns nothing, because every graphic tee in the data is listed as `S/M` or `L`. It recommended whole-token matching instead, so `M` would match `S/M`. It had also put an import and a stopword list at the top of `tools.py`.
+- *What I changed:* I kept exact match on purpose and wrote it into my Tool Inventory (`M` does not match `S/M`), and had the import and stopwords moved inside the function so all my changes stay inside the tool. Running the full agent later showed the cost: `vintage graphic tee under $30, size M` returned a floral slip dress, because one shared word ("vintage") is enough to count as a match.
 
 <!-- ═══════════════════════ UNIT 4 — THE TEST ═══════════════════════
 
