@@ -78,8 +78,44 @@ def search_listings(
     Test it from a terminal before you move on:
         python -c "from tools import search_listings; print(search_listings('graphic tee', max_price=30))"
     """
-    # TODO: replace this with your implementation
-    return []
+    import re
+
+    # Filler words that would otherwise match almost every listing.
+    stopwords = {"a", "an", "the", "and", "or", "for", "with", "in", "of", "to",
+                 "i", "me", "my", "want", "need", "looking", "some", "something"}
+
+    listings = load_listings()
+
+    # Filter first: price ceiling is inclusive, size is an exact match ignoring
+    # case ("M" matches "m" but not "S/M").
+    if max_price is not None:
+        listings = [l for l in listings if l["price"] <= max_price]
+    if size is not None:
+        wanted = size.strip().lower()
+        listings = [l for l in listings if l["size"].strip().lower() == wanted]
+
+    # Score by keyword overlap: how many words of the description appear in the
+    # listing's title, description, category, style_tags, colors, or brand.
+    keywords = {w for w in re.findall(r"[a-z0-9']+", description.lower())
+                if w not in stopwords}
+
+    scored = []
+    for listing in listings:
+        text = " ".join([
+            listing["title"],
+            listing["description"],
+            listing["category"],
+            " ".join(listing["style_tags"]),
+            " ".join(listing["colors"]),
+            listing["brand"] or "",  # brand is None for most listings
+        ]).lower()
+        listing_words = set(re.findall(r"[a-z0-9']+", text))
+        score = len(keywords & listing_words)
+        if score > 0:
+            scored.append((score, listing))
+
+    scored.sort(key=lambda pair: pair[0], reverse=True)
+    return [listing for _, listing in scored[: config.SEARCH_RESULT_LIMIT]]
 
 
 # ── Tool 2: suggest_outfit ────────────────────────────────────────────────────
@@ -112,8 +148,35 @@ def suggest_outfit(new_item: dict, wardrobe: dict) -> str:
     Test it from a terminal before you move on:
         python -c "from tools import suggest_outfit; from utils.data_loader import get_example_wardrobe, load_listings; print(suggest_outfit(load_listings()[0], get_example_wardrobe()))"
     """
-    # TODO: replace this with your implementation
-    return ""
+    item_desc = (
+        f"{new_item['title']} ({new_item['category']}), "
+        f"colors: {', '.join(new_item['colors'])}, "
+        f"style: {', '.join(new_item['style_tags'])}"
+    )
+    items = wardrobe.get("items") or []
+
+    system = ("You're a thrift clothing stylist. Give one or two short outfit ideas,"
+              "a few sentences each in plain text (no markdown headings).")
+
+
+    if not items:
+        # Empty wardrobe -> general styling advice
+        prompt = (f"I'm thinking of buying this thrifted item: {item_desc}.\n"
+                  "Suggest one or two outfits built around it, using common" 
+                  "basics anyone might own.")
+    else:
+        owned = "\n".join(
+            f"- {w['name']} ({w['category']}, colors: {', '.join(w['colors'])})"
+            for w in items
+        )
+        prompt = (f"I'm thinking of buying this thrifted item: {item_desc}.\n"
+                  f"Here is my current wardrobe:\n{owned}\n"
+                  "Suggest one or two outfits that pair the new item with pieces "
+                  "from my wardrobe. Name the wardrobe pieces exactly as listed.")
+
+    response = generate(prompt, system=system)
+    # Spec says non-empty string, so never hand back "".
+    return response or f"Style the {new_item['title']} with simple basics in neutral colors."
 
 
 # ── Tool 3: create_fit_card ───────────────────────────────────────────────────
@@ -152,5 +215,21 @@ def create_fit_card(outfit: str, new_item: dict) -> str:
     Test it from a terminal before you move on:
         python -c "from tools import create_fit_card; from utils.data_loader import load_listings; print(create_fit_card('jeans and white sneakers', load_listings()[0]))"
     """
-    # TODO: replace this with your implementation
-    return ""
+    # Empty-case value from the Tool Inventory. Starts with "No fit card" so the
+    # loop (and a test) can tell it apart from a real caption.
+    if not outfit or not outfit.strip():
+        return "No fit card: there was no outfit suggestion to write a caption from."
+
+    price = f"${new_item['price']:g}"  # 18.0 -> "$18"
+    system = ("You write short captions people post about their thrift finds."
+              "Sound like a real person and not like a product description."
+              "Two to four sentences in plain text, no hashtags or quotes.")
+    prompt = (f"Item: {new_item['title']}\n"
+              f"Price: {price}\n"
+              f"Platform: {new_item['platform']}\n"
+              f"Style: {', '.join(new_item['style_tags'])}\n"
+              f"How I'm wearing it: {outfit}\n\n"
+              "Write the caption. Mention the item, price, and platform "
+              "and be specific about the vibe it gives off.")
+
+    return generate(prompt, system=system)
