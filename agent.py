@@ -138,9 +138,14 @@ def run_agent(query: str, wardrobe: dict) -> dict:
     steps += 1
     trace.check_iterations(steps)
     parsed = session["parsed"]
-    session["search_results"] = search_listings(
-        parsed["description"], parsed["size"], parsed["max_price"]
-    )
+    # search_listings runs on the MCP server (mcp_server.py)
+    from mcp_client import call_tool
+    
+    session["search_results"] = call_tool("search_listings", {
+        "description": parsed["description"],
+        "size": parsed["size"],
+        "max_price": parsed["max_price"],
+    })
 
     # ── THE BRANCH: nothing found → say what to change and stop ──────────────
     if not session["search_results"]:

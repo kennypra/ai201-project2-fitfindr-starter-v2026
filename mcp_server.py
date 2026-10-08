@@ -69,20 +69,36 @@ mcp = FastMCP("fitfindr", log_level="WARNING")
 
 # ── TODO: uncomment and fill this in ──────────────────────────────────────────
 #
-# @mcp.tool()
-# def search_listings(
-#     description: str,
-#     size: str | None = None,
-#     max_price: float | None = None,
-# ) -> list[dict]:
-#     """
-#     <-- YOUR DESCRIPTION GOES HERE.
-#
-#         One or two sentences. What does this tool do, what does it need, and
-#         what does it give back when it finds nothing? Written for a reader
-#         who cannot see the code.
-#     """
-#     return _search_listings_impl(description, size, max_price)
+@mcp.tool()
+def search_listings(
+    description: str,
+    size: str | None = None,
+    max_price: float | None = None,
+) -> list[dict]:
+    """
+    Searches a fixed catalog of 40 second-hand clothing listings from Depop,
+    thredUp, and Poshmark.
+
+    'description' (string, required) is free text, split into keywords; filler
+    words like "a", "the", and "for" are ignored. Keywords are matched as whole
+    words, ignoring case, against each listing's title, description, category,
+    style_tags, colors, and brand. A listing must share at least one keyword to
+    be returned.
+    'size' (string, optional) must equal the listing's size exactly, ignoring
+    case: "M" matches "M" or "m", but NOT "S/M" or "M/L". Omit it to skip the
+    size filter.
+    'max_price' (number, optional) is a price ceiling in US dollars, inclusive:
+    30 keeps a listing priced 30.0. Omit it to skip the price filter.
+
+    Returns a list of at most 10 listing dicts, the most shared keywords first.
+    Each dict has: id, title, description, category, style_tags (list), size,
+    condition, price (number, dollars), colors (list), brand (string or null;
+    most listings have no brand), platform.
+
+    **Returns an empty list when nothing matches.** It does not return null and
+    it does not raise: an empty list is the normal way this tool says "no".
+    """
+    return _search_listings_impl(description, size, max_price)
 #
 # ──────────────────────────────────────────────────────────────────────────────
 #
