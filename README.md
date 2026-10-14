@@ -186,6 +186,35 @@ Scored these vintage Levi 501s on Depop for thirty eight bucks and they fit like
 - *What came back:* The tool, plus a test showing that `'graphic tee'` in size `M` under $30 returns nothing, because every graphic tee in the data is listed as `S/M` or `L`. It recommended whole-token matching instead, so `M` would match `S/M`. It had also put an import and a stopword list at the top of `tools.py`.
 - *What I changed:* I kept exact match on purpose and wrote it into my Tool Inventory (`M` does not match `S/M`), and had the import and stopwords moved inside the function so all my changes stay inside the tool. Running the full agent later showed the cost: `vintage graphic tee under $30, size M` returned a floral slip dress, because one shared word ("vintage") is enough to count as a match.
 
+**Unit 4**
+
+**Moment 3**
+
+- *What I asked for:* to wrap `search_listings` in `mcp_server.py` using the
+  description I had in the file.
+- *What came back:* Claude compared the description to my code and found it
+  described a different tool: it claimed `M` matches `S/M` (my code is exact
+  match), that "one size" listings match any size, and a cheaper-first
+  tiebreak, none of which my code does, and it left out that the description
+  field is searched.
+- *What I changed:* I had the description rewritten to match what the code
+  actually does, so an agent reading it would get the real contract.
+
+**Moment 4**
+
+- *What I asked for:* to run the before test, then propose one fix for
+  whatever missed.
+- *What came back:* Criterion 4 missed (1 of 5). Claude read the failing cards
+  and found every one wrote the price in words ("forty-two bucks"). It offered
+  three fixes: a prompt line, code that appends the price, or a lower
+  temperature. Separately, when drafting the after-run section, its first
+  version of the pasted fit card had made-up text after the first sentence;
+  it caught that by checking against the results file and replaced it with
+  the real card.
+- *What I changed:* I picked the prompt fix, because the code fix would only
+  hide the problem from my check, and also had the missing spaces in the
+  system prompt fixed. Criterion 4 went to 5 of 5.
+
 <!-- ═══════════════════════ UNIT 4 — THE TEST ═══════════════════════
 
      Don't fill these in during unit 3.
@@ -557,6 +586,32 @@ nothing about the price, and the price was the only thing that failed.
      you did. "I ran out of time" is fine if it's true. Pretending nothing is
      left is not. -->
 
+After the fix, no criterion is still missed: all five are MET in the after-run.
+That doesn't mean nothing is broken. These are real problems the test run
+showed, which my criteria didn't catch:
+
+- **The search can pick the wrong kind of item, and every criterion still
+  passes.** `black combat boots` selected an *Oversized Flannel Shirt* in all
+  10 of its runs (criteria 3 and 4, before and after), because one shared word
+  ("black") is enough to count as a match, and no listing matches "combat
+  boots" better. Criteria 1, 3, and 4 all passed those runs, because they
+  check that the tools ran, the id carried through, and what the caption
+  contains, not whether the item is what the user asked for. What I'd do: add
+  a criterion for relevance (for example, the selected item's category matches
+  the item type in the query), then make `search_listings` require more than
+  one shared keyword or weight title words higher. Why I stopped: this unit
+  allows one change, and the diagnosis pointed at criterion 4, the only
+  criterion that missed.
+- **Exact size matching rejects close sizes.** `graphic tee` in size `M` under
+  $30 returns nothing, because the tees are listed as `S/M` or `L`. That's the
+  rule I chose in unit 3, but a user would read it as a broken search. What
+  I'd do: match whole size tokens, so `M` matches `S/M`. No criterion tests
+  sizes, so it never showed up as a miss.
+- **Two of my criteria were close to impossible to miss.** Criteria 3 and 5
+  check plain code with nothing random in it (passing an id through the
+  session, filtering by price), so 5 of 5 was nearly guaranteed. A harder
+  version of 5 would include phrasings my regex doesn't handle, like `under 30`
+  without the `$`, which skips the price filter without any warning.
 
 
 <!-- ═════════════════════════════════════════════════════════════════════
