@@ -221,8 +221,8 @@ def create_fit_card(outfit: str, new_item: dict) -> str:
         return "No fit card: there was no outfit suggestion to write a caption from."
 
     price = f"${new_item['price']:g}"  # 18.0 -> "$18"
-    system = ("You write short captions people post about their thrift finds."
-              "Sound like a real person and not like a product description."
+    system = ("You write short captions people post about their thrift finds. "
+              "Sound like a real person and not like a product description. "
               "Two to four sentences in plain text, no hashtags or quotes.")
     prompt = (f"Item: {new_item['title']}\n"
               f"Price: {price}\n"
@@ -230,6 +230,8 @@ def create_fit_card(outfit: str, new_item: dict) -> str:
               f"Style: {', '.join(new_item['style_tags'])}\n"
               f"How I'm wearing it: {outfit}\n\n"
               "Write the caption. Mention the item, price, and platform "
-              "and be specific about the vibe it gives off.")
+              "and be specific about the vibe it gives off. "
+              f"Write the price exactly as {price}, in digits, never spelled "
+              "out in words.")
 
     return generate(prompt, system=system)

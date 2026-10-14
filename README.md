@@ -481,21 +481,68 @@ lists of plain dicts, so nothing was lost on the way through MCP.
 
      `python run_eval.py --label after` -->
 
-**What I changed:**
+**What I changed:** One prompt, in `tools.py::create_fit_card`. I added one
+sentence to the end of the user prompt telling the model how to write the price:
 
-**Which failure it was meant to fix:**
+```
+Before:
+  "Write the caption. Mention the item, price, and platform and be specific
+   about the vibe it gives off."
+
+After:
+  "Write the caption. Mention the item, price, and platform and be specific
+   about the vibe it gives off. Write the price exactly as {price}, in digits,
+   never spelled out in words."
+```
+
+`{price}` is the item's real price, e.g. `$42`. In the same prompt I also added
+the missing spaces between the system prompt's sentences, which had been
+running together (`"...thrift finds.Sound like a real person..."`). Nothing
+else changed: same tools, loop, scenarios, temperature (0.9), and caching off.
+
+**Which failure it was meant to fix:** Criterion 4. The diagnosis showed every
+failed fit card failed for one reason: the model wrote the price in words
+("forty-two bucks") because the prompt never said what format to use.
 
 ### Run Log — After
 
+Run with `python run_eval.py --label after` (same 18 scenarios, 5 tries each,
+caching off, 170 model calls). Raw output:
+`results/run_2026-10-14_0050_after.md`, marked by `check_run.py`. Rows are
+filled the same way as before: Try N is query N's first try for criteria 3–5.
+
 | Criterion | Target | Try 1 | Try 2 | Try 3 | Try 4 | Try 5 | Verdict |
 |---|---|---|---|---|---|---|---|
-| 1.  |  |  |  |  |  |  |  |
-| 2.  |  |  |  |  |  |  |  |
-| 3.  |  |  |  |  |  |  |  |
-| 4.  |  |  |  |  |  |  |  |
-| 5.  |  |  |  |  |  |  |  |
+| 1. A matching query completes all three tools | 4 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| 2. An impossible query stops before the second tool | 5 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| 3. The selected item's id is the id `suggest_outfit` receives | 5 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| 4. The fit card has the price as a number, the platform, and a title/tag word | 4 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| 5. No result is over a stated price ceiling | 5 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
 
-**Did it help, and how do I know:**
+| Criterion | Before (first tries) | After (first tries) | Before (all 25 runs) | After (all 25 runs) |
+|---|---|---|---|---|
+| 4 | 1/5 MISSED | 5/5 MET | 7/25 | 25/25 |
+
+Real output, criterion 4, `denim jacket under $50`, Try 1 (the same scenario
+and try pasted in the before log):
+
+```
+- selected_item: Denim Jacket — Light Wash, Cropped ($42.0, poshmark)
+
+Fit card:
+Scored this light wash cropped denim jacket on Poshmark for $42 and I am obsessed. It gives off such a cool, effortless vintage streetwear vibe. Can't wait to style it with everything from baggy jeans to khaki trousers.
+
+check_run.py: try 1: PASS — all three present
+```
+
+**Did it help, and how do I know:** Yes: criterion 4 went from MISSED (1/5)
+to MET (5/5), and every fit card in the whole after-run (85 of 85, across all
+scenarios) wrote the price in digits, up from 17 of 85 before, while criteria
+1, 2, 3, and 5 stayed at 5/5. I read all 25 criterion-4 cards by hand to
+confirm `check_run.py`'s marks; the cards still read like real posts ("for
+only $42 and I'm honestly obsessed"). One caveat: the spacing fix went into
+the same run, so the two can't be fully separated, but the spacing change says
+nothing about the price, and the price was the only thing that failed.
 
 <!-- If it made things worse, say that. Honestly reported, that earns full
      credit and is more interesting than one that worked. -->
