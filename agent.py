@@ -133,6 +133,9 @@ def run_agent(query: str, wardrobe: dict) -> dict:
     description = " ".join(text.replace(",", " ").split())
     session["parsed"] = {"description": description, "size": size,
                          "max_price": max_price}
+    trace.step("parse_query (regex)", inputs=query,
+               returned=f"description={description!r}, size={size!r}, "
+                        f"max_price={max_price!r}")
 
     # ── search ────────────────────────────────────────────────────────────────
     steps += 1
@@ -146,6 +149,10 @@ def run_agent(query: str, wardrobe: dict) -> dict:
         "size": parsed["size"],
         "max_price": parsed["max_price"],
     })
+    trace.step("search_listings (via MCP)",
+               inputs=f"description={parsed['description']!r}, "
+                      f"size={parsed['size']!r}, max_price={parsed['max_price']!r}",
+               returned=session["search_results"])
 
     # ── THE BRANCH: nothing found → say what to change and stop ──────────────
     if not session["search_results"]:
@@ -165,22 +172,53 @@ def run_agent(query: str, wardrobe: dict) -> dict:
                if parsed["max_price"] is not None else "")
             + ". Try: " + "; ".join(tips) + "."
         )
+        trace.step("branch", returned=session["error"],
+                   note="search empty → stop before suggest_outfit")
         return session
 
     # ── otherwise: pick the best match and keep going ─────────────────────────
     session["selected_item"] = session["search_results"][0]
+    trace.step("branch",
+               returned=f"selected_item id={session['selected_item']['id']} "
+                        f"({session['selected_item']['title']})",
+               note=f"{len(session['search_results'])} results → took the first")
 
-    steps += 1
-    trace.check_iterations(steps)
-    session["outfit_suggestion"] = suggest_outfit(
-        session["selected_item"], session["wardrobe"]
-    )
+    # Both remaining tools call the model. If it can't be reached (bad key, no
+    # network, model overloaded), stop with a message instead of crashing, and
+    # keep what the search already found.
+    try:
+        steps += 1
+        trace.check_iterations(steps)
+        outfit_item = session["selected_item"]
+        session["outfit_suggestion"] = suggest_outfit(
+            outfit_item, session["wardrobe"]
+        )
+        trace.step("suggest_outfit",
+                   inputs=f"new_item id={outfit_item['id']}, wardrobe: "
+                          f"{len(session['wardrobe'].get('items') or [])} items",
+                   returned=session["outfit_suggestion"])
 
-    steps += 1
-    trace.check_iterations(steps)
-    session["fit_card"] = create_fit_card(
-        session["outfit_suggestion"], session["selected_item"]
-    )
+        steps += 1
+        trace.check_iterations(steps)
+        card_item = session["selected_item"]
+        session["fit_card"] = create_fit_card(
+            session["outfit_suggestion"], card_item
+        )
+        trace.step("create_fit_card",
+                   inputs=f"new_item id={card_item['id']}, outfit from "
+                          "suggest_outfit",
+                   returned=session["fit_card"])
+    except ModelUnavailable:
+        item = session["selected_item"]
+        session["error"] = (
+            "Couldn't reach the style model, so there's no outfit or fit card. "
+            f"The search still found {item['title']} (${item['price']:g} on "
+            f"{item['platform']}). Check GEMINI_API_KEY in .env, or try again "
+            "in a minute if the model is busy."
+        )
+        trace.step("model_unavailable", returned=session["error"],
+                   note="model call failed → stop, fit_card stays None")
+        return session
 
     return session
 

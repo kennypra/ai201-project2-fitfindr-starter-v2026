@@ -35,18 +35,47 @@ SCENARIOS = [
         "wardrobe": "empty",
         "criterion": None,
     },
-    # TODO: add what your criteria 3, 4 and 5 need.
-    #
-    # Set "criterion" to the number in criteria.md that the scenario tests.
-    # "criterion": None means a diagnostic run — useful to have, but it isn't
-    # one of your five, and run_eval.py marks it as such in the table.
-    #
-    # For a state criterion, any normal query works — what you're checking is
-    # what ends up in the session, not what the user typed.
-    #
-    # For a fit-card criterion, you probably want the SAME query listed more
-    # than once, or several different items, depending on what your criterion
-    # actually says.
+    # ── Criterion 3: state ────────────────────────────────────────────────────
+    # "For 5 different queries..." — one scenario per query. Checked in the
+    # trace: the id in the branch step vs the id going into suggest_outfit.
+    {"name": "c3 state q1", "query": "denim jacket under $50",
+     "wardrobe": "example", "criterion": 3},
+    {"name": "c3 state q2", "query": "black combat boots",
+     "wardrobe": "example", "criterion": 3},
+    {"name": "c3 state q3", "query": "plaid flannel shirt",
+     "wardrobe": "example", "criterion": 3},
+    {"name": "c3 state q4", "query": "y2k baby tee",
+     "wardrobe": "example", "criterion": 3},
+    {"name": "c3 state q5", "query": "wide-leg trousers under $40",
+     "wardrobe": "example", "criterion": 3},
+
+    # ── Criterion 4: fit card ─────────────────────────────────────────────────
+    # Same 5 different queries. Each card is checked for the price as a whole
+    # number, the platform, and a word from the title or style_tags.
+    {"name": "c4 fit card q1", "query": "denim jacket under $50",
+     "wardrobe": "example", "criterion": 4},
+    {"name": "c4 fit card q2", "query": "black combat boots",
+     "wardrobe": "example", "criterion": 4},
+    {"name": "c4 fit card q3", "query": "plaid flannel shirt",
+     "wardrobe": "example", "criterion": 4},
+    {"name": "c4 fit card q4", "query": "y2k baby tee",
+     "wardrobe": "example", "criterion": 4},
+    {"name": "c4 fit card q5", "query": "wide-leg trousers under $40",
+     "wardrobe": "example", "criterion": 4},
+
+    # ── Criterion 5: price ceiling ────────────────────────────────────────────
+    # 5 different queries, each stating a ceiling; all four phrasings appear.
+    # Every listing in search_results must be priced at or below N.
+    {"name": "c5 ceiling 'under'", "query": "graphic tee under $25",
+     "wardrobe": "example", "criterion": 5},
+    {"name": "c5 ceiling 'less than'", "query": "denim jacket less than $45",
+     "wardrobe": "example", "criterion": 5},
+    {"name": "c5 ceiling 'below'", "query": "boots below $60",
+     "wardrobe": "example", "criterion": 5},
+    {"name": "c5 ceiling 'max'", "query": "flannel max $30",
+     "wardrobe": "example", "criterion": 5},
+    {"name": "c5 ceiling 'under' 2", "query": "cargo pants under $28",
+     "wardrobe": "example", "criterion": 5},
 ]
 
 WARDROBES = ("example", "empty")
